@@ -40,7 +40,6 @@ services:
     depends_on:
       - em-postgres
     ports:
-      - "3000:3000"
       - "8080:9001"
     environment:
       HOST: 0.0.0.0
@@ -52,13 +51,11 @@ services:
     container_name: em-nginx
     build: containers/nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "81:80"
     volumes:
       - em-log:/var/log/nginx
       - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./containers/nginx/expense-manager.conf:/etc/nginx/expense-manager.conf:ro
-#      - src-data:/var/www/html:rw
     networks:
       default:
         aliases:
