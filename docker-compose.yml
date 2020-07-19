@@ -1,5 +1,22 @@
 version: "3.4"
 
+volumes:
+  em-db:
+    driver_opts:
+      type: none
+      device: ${PROJECT_DIR}${DOCKER_PROJECT_NAME}/postgresql
+      o: bind
+  em-src:
+    driver_opts:
+      type: none
+      device: ${PROJECT_DIR}${EM_PROJECT_NAME}
+      o: bind
+  em-log:
+    driver_opts:
+      type: none
+      device:  ${PROJECT_DIR}${DOCKER_PROJECT_NAME}/log/
+      o: bind
+
 services:
   em-postgres:
     restart: unless-stopped
@@ -8,9 +25,41 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./.db/postgres:/var/lib/postgresql/data
+      - em-db:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+
+  em-node:
+    restart: unless-stopped
+    build: containers/node12
+    container_name: em-node
+    tty: true
+    depends_on:
+      - em-postgres
+    ports:
+      - "3000:3000"
+      - "8080:9001"
+    environment:
+      HOST: 0.0.0.0
+    volumes:
+      - em-src:/var/www/html:rw
+
+  em-nginx:
+    restart: unless-stopped
+    container_name: em-nginx
+    build: containers/nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - em-log:/var/log/nginx
+      - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./containers/nginx/expense-manager.conf:/etc/nginx/expense-manager.conf:ro
+#      - src-data:/var/www/html:rw
+    networks:
+      default:
+        aliases:
+          - local-em
